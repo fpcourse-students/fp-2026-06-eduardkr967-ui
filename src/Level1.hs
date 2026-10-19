@@ -11,15 +11,15 @@ import MetaUtils (todo, todoImpl)
 
 -- E.render E.Warning
 predictedShow :: String
-predictedShow = todo "1.1 show"
+predictedShow =  "[WARNING]"
 
 -- E.Labelled "old" 7 == E.Labelled "new" 7
 predictedEq :: Bool
-predictedEq = todo "1.1 eq"
+predictedEq = True
 
 -- fmap not (Just True)
 predictedFmap :: Maybe Bool
-predictedFmap = todo "1.1 fmap"
+predictedFmap = Just False
 
 
 -- 1.2. Равенство деревьев.
@@ -33,7 +33,7 @@ data IntTree = IntLeaf | IntNode IntTree (Int, Int) IntTree
 {- HLINT ignore "Use record patterns" -}
 instance Eq IntTree where
   IntLeaf == IntLeaf = True
-  IntNode _ _ _ == IntNode _ _ _ = todo "1.2"
+  IntNode a' (_, x') b' == IntNode a'' (_, x'') b'' = (x' == x'') && (a' == a'') && (b' == b'')
   _ == _ = False
 
 
@@ -44,7 +44,9 @@ instance Eq IntTree where
 data Tree a = Leaf | Node a [Tree a]
   deriving (Eq, Show)
 
-todoImpl ''Functor ''Tree
+instance Functor Tree where
+  fmap _ Leaf = Leaf
+  fmap f (Node x ts) = Node (f x) (map (fmap f) ts)
 
 
 -- 1.4. Сравнение структур.
@@ -57,5 +59,16 @@ todoImpl ''Functor ''Tree
 class StructEq (f :: Type -> Type) where
   (==#) :: f a -> f b -> Bool
 
-todoImpl ''StructEq ''[]
-todoImpl ''StructEq ''Tree
+instance StructEq [] where
+  (==#) [] [] = True
+  (==#) (_:s') (_:s'') = s' ==# s''
+  (==#) _ _ = False
+
+instance StructEq Tree where
+  (==#) Leaf Leaf = True
+  (==#) (Node _ ts') (Node _ ts'') = go ts' ts''
+    where
+      go [] [] = True
+      go (t':ts') (t'':ts'') = (t' ==# t'') && go ts' ts''
+      go _ _ = False
+  (==#) _ _ = False
